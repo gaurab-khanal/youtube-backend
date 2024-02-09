@@ -1,12 +1,13 @@
 import mongoose, { Schema } from "mongoose";
 import jwt from "jsonwebtoken"; // used for access and refresh token // JWT is a bearer token which is it sends the data to one who have access to the token
 import bcrypt from "bcrypt"; // decrypt and encrypt passwords
+import validator from "validator";
 
 const userSchema = new Schema(
   {
     username: {
       type: String,
-      required: true,
+      required: [true, "Please provide username"],
       unique: true,
       lowercase: true,
       trim: true,
@@ -14,14 +15,15 @@ const userSchema = new Schema(
     },
     email: {
       type: String,
-      required: true,
+      required: [true, "Please provide an email"],
       unique: true,
       lowercase: true,
       trim: true,
+      validate: [validator.isEmail, "Please enter email in correct format"],
     },
     fullName: {
       type: String,
-      required: true,
+      required: [true, "Please provide your fullname"],
       lowercase: true,
       trim: true,
       index: true,
@@ -42,9 +44,11 @@ const userSchema = new Schema(
     password: {
       type: String,
       required: [true, "Password is required"],
+      select: false,
     },
     refreshToken: {
       type: String,
+      select: false,
     },
   },
   { timestamps: true }
@@ -53,7 +57,7 @@ const userSchema = new Schema(
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
-  this.password = bcrypt.hash(this.password, 10);
+  this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
