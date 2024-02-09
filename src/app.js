@@ -20,4 +20,11 @@ app.use(express.static("public")); // allows to store static data received from 
 
 app.use(cookieParser()); // allows to access cookies of browser as well set the cookies.
 
+// routes import
+
+import userRoutes from "./routes/user.routes.js";
+
+// routes declaration
+app.use("/api/v1/users", userRoutes);
+
 export { app };
