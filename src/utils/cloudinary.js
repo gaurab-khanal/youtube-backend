@@ -16,7 +16,13 @@ const uploadOnCloudinary = async (localFilePath) => {
     });
     // file has been uploaded successfully
     console.log("File is uploaded on cloudinary: ", response.url);
-    fs.unlink(localFilePath);
+    fs.unlink(localFilePath, (err) => {
+      if (err) {
+        console.log("Error while deleting file: ", err);
+      } else {
+        console.log("File deleted successfully");
+      }
+    });
     return response;
   } catch (error) {
     console.log("er: ", error);
