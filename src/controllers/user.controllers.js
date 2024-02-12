@@ -2,7 +2,7 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { deleteOnCloudinray, uploadOnCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -61,7 +61,10 @@ const registerUser = asyncHandler(async (req, res) => {
     fullName,
     email,
     username: username.toLowerCase(),
-    avatar: avatarOnline.url,
+    avatar: {
+      id: avatarOnline.public_id,
+      url: avatarOnline.url,
+    },
     coverImage: coverImageOnline?.url || "",
     password,
   });
@@ -217,4 +220,142 @@ const refreshAccessToken = asyncHandler(async () => {
   }
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  const user = await User.findById(req.user?._id).select("+ password");
+  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "Invalid old passsword");
+  }
+
+  user.password = newPassword;
+
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"));
+});
+
+const getCurrentUser = asyncHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(new ApiResponse(200, req.user, "User fetched successfully"));
+});
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { fullName, email } = req.body;
+
+  if (!fullName || !email) {
+    throw new ApiError(400, "All fields are required");
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        fullName,
+        email,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Account details updated"));
+});
+
+const updateUserAvatar = asyncHandler(async (req, res) => {
+  const avatarLocalPath = req.file?.path;
+
+  if (!avatarLocalPath) {
+    new ApiError(400, "Avatar file is missing");
+  }
+
+  const avatarOnline = await uploadOnCloudinary(avatarLocalPath);
+
+  if (!avatarOnline) {
+    throw new ApiError(400, "Error while uploading on avatar");
+  }
+
+  const user = await User.findById(req.user._id);
+
+  const avatarId = user.avatar?.id;
+
+  const deleteFile = await deleteOnCloudinray(avatarId);
+
+  const userAvatar = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        avatar: {
+          id: avatarOnline.public_id,
+          url: avatarOnline.url,
+        },
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, userAvatar, "Avatar updated successfully"));
+});
+
+const updateUserCover = asyncHandler(async (req, res) => {
+  const coverLocalPath = req.file?.path;
+
+  if (!coverLocalPath) {
+    new ApiError(400, "Cover Image file is missing");
+  }
+
+  const coverOnline = await uploadOnCloudinary(coverLocalPath);
+
+  if (!coverOnline) {
+    throw new ApiError(400, "Error while uploading on cover image");
+  }
+
+  const user = await User.findById(req.user._id);
+
+  const coverId = user.coverImage?.id;
+
+  const deleteFile = await deleteOnCloudinray(coverId);
+
+  const userCover = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        coverImage: {
+          id: coverOnline.public_id,
+          url: coverOnline.url,
+        },
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, userCover, "Cover Image updated successfully"));
+});
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser,
+  updateAccountDetails,
+  updateUserAvatar,
+  updateUserCover,
+};
