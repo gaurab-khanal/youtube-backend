@@ -33,7 +33,9 @@ const uploadOnCloudinary = async (localFilePath) => {
 
 const deleteOnCloudinray = async (fileId) => {
   try {
-    await cloudinary.v2.uploader.destroy(fileId);
+    console.log("File id: ", fileId);
+    const response = await cloudinary.uploader.destroy(fileId);
+    return response;
   } catch (error) {
     console.log("Error: ", error);
   }

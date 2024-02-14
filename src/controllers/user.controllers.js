@@ -290,6 +290,8 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 
   const deleteFile = await deleteOnCloudinray(avatarId);
 
+  console.log("Deleted avatar :", deleteFile);
+
   const userAvatar = await User.findByIdAndUpdate(
     req.user?._id,
     {
