@@ -68,4 +68,16 @@ const publishVideo = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, newVideo, "Video published successfully"));
 });
 
-export { publishVideo };
+const myVideos = asyncHandler(async (req, res) => {
+  const video = await Video.find({ owner: req.user._id });
+
+  if (!video) {
+    throw new ApiError(400, "No videos found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "User video fetched"));
+});
+
+export { publishVideo, myVideos };
