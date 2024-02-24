@@ -7,7 +7,7 @@ import { deleteOnCloudinray, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { Comment } from "../models/comment.model.js";
 import { Like } from "../models/likes.model.js";
 import { Playlist } from "../models/playlist.model.js";
-import { isValidObjectId } from "mongoose";
+import { Types, isValidObjectId } from "mongoose";
 
 const publishVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
@@ -225,9 +225,144 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
   const deleteVideo = await Video.findByIdAndDelete(videoId);
 
+  // delete comment and like modal for deleted video based on id;
+  await Comment.deleteMany({ video: videoId });
+  await Like.deleteMany({ video: videoId });
+
   return res
     .status(200)
     .json(new ApiResponse(200, deleteVideo, "Video deleted successfully"));
+});
+
+const isUserOwner = async (videoId, req) => {
+  const video = await Video.findById(videoId);
+
+  if (video?.owner.toString() === req.user?._id.toString()) {
+    return true;
+  } else {
+    return false;
+  }
+};
+
+const tooglePublishStatus = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!videoId) {
+    throw new ApiError(404, "Video id is required");
+  }
+
+  const video = await Video.findById(videoId);
+
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  const isAuthorized = await isUserOwner(videoId, req);
+
+  if (!isAuthorized) {
+    throw new ApiError(300, "Unauthorized Access");
+  }
+
+  const updatedVideo = await Video.findByIdAndUpdate(
+    videoId,
+    {
+      $set: {
+        isPublished: !video.isPublished,
+      },
+    },
+    { new: true }
+  );
+
+  if (!updatedVideo) {
+    throw new ApiError(500, "Something went wrong while toggling the status");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        updatedVideo,
+        "Published status of video updated successfully"
+      )
+    );
+});
+
+const getAllVideos = asyncHandler(async (req, res) => {
+  let { page = 1, limit = 12, query, sortBy, userId } = req.query;
+
+  // Parse page and limit to number;
+
+  page = parseInt(page, 10);
+  limit = parseInt(limit, 10);
+
+  // validate and adjust page and limit values;
+  page = Math.max(1, page);
+  limit = Math.min(20, Math.max(1, limit)); // make sure the limit is between 1 and 20.
+
+  const pipeline = [];
+
+  // return videos by owner if userId is provided
+  if (userId) {
+    if (!isValidObjectId(userId)) {
+      throw new ApiError(400, "UserId is invalid");
+    }
+
+    pipeline.push({
+      $match: {
+        owner: new Types.ObjectId(userId),
+      },
+    });
+  }
+
+  // match videos based on search query;
+  if (query) {
+    pipeline.push({
+      $match: {
+        $text: {
+          $search: query,
+        },
+      },
+    });
+  }
+
+  // sort based on sortBy and sortType
+
+  const sortCriteria = {};
+
+  if (sortBy) {
+    sortCriteria[sortBy] = sortBy === "asc" ? 1 : -1;
+    pipeline.push({
+      $sort: sortCriteria,
+    });
+  } else {
+    // defaut sort by createdAt field
+    sortCriteria["createdAt"] = -1;
+    pipeline.push({
+      $sort: sortCriteria,
+    });
+  }
+
+  let skip = (page - 1) * limit;
+  // pagination
+  pipeline.push({
+    $skip: skip,
+  });
+
+  pipeline.push({
+    $limit: limit,
+  });
+
+  // add aggeration pipeline
+  const Videos = await Video.aggregate(pipeline);
+
+  if (!Videos || Videos.length === 0) {
+    throw new ApiError(404, "Videos not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, Videos, "Videos fetched successfully"));
 });
 
 export {
@@ -237,4 +372,6 @@ export {
   getVideoById,
   updateVideo,
   deleteVideo,
+  tooglePublishStatus,
+  getAllVideos,
 };

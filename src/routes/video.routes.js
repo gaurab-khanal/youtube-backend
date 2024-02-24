@@ -8,6 +8,8 @@ import {
   getVideoById,
   updateVideo,
   deleteVideo,
+  tooglePublishStatus,
+  getAllVideos,
 } from "../controllers/video.controllers.js";
 
 const router = Router();
@@ -34,6 +36,9 @@ router
 
 router.route("/myvideos").get(verifyJwt, myVideos);
 router.route("/channelVideo/:id").get(myVideosToPublic);
+router.route("/allVideos").get(getAllVideos);
 router.route("/:videoId").get(getVideoById).delete(verifyJwt, deleteVideo);
+
+router.route("/toggle/publish/:videoId").patch(verifyJwt, tooglePublishStatus);
 
 export default router;
