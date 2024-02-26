@@ -25,8 +25,10 @@ app.use(cookieParser()); // allows to access cookies of browser as well set the 
 import userRoutes from "./routes/user.routes.js";
 import videoRoutes from "./routes/video.routes.js";
 import commentRoutes from "./routes/comment.routes.js";
+import healthcheckRouter from "./routes/healthcheck.routes.js";
 
 // routes declaration
+app.use("/api/v1/healthcheck", healthcheckRouter);
 app.use("/api/v1/comment", commentRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/video", videoRoutes);
