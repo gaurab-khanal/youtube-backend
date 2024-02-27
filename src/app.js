@@ -27,8 +27,10 @@ import videoRoutes from "./routes/video.routes.js";
 import commentRoutes from "./routes/comment.routes.js";
 import healthcheckRouter from "./routes/healthcheck.routes.js";
 import LikeRoutes from "./routes/like.routes.js";
+import SubscriberRoutes from "./routes/subscription.routes.js";
 
 // routes declaration
+app.use("/api/v1/subscription", SubscriberRoutes);
 app.use("/api/v1/healthcheck", healthcheckRouter);
 app.use("/api/v1/comment", commentRoutes);
 app.use("/api/v1/users", userRoutes);
