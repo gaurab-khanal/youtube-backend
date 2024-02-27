@@ -72,7 +72,11 @@ const toggleSubscription = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, subscribe, "Channel is unsunscribed successfully")
+      new ApiResponse(
+        200,
+        subscribeRemove,
+        "Channel is unsunscribed successfully"
+      )
     );
 });
 
@@ -87,7 +91,7 @@ const getOtherChannelSubscribers = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Channel id is invalid");
   }
 
-  const subscribers = await Subscription.findById(channelId);
+  const subscribers = await Subscription.find({ channel: channelId });
 
   if (!subscribers) {
     return res
@@ -117,7 +121,12 @@ const getMySubscriptionList = asyncHandler(async (req, res) => {
     throw new ApiError(400, "User id is invalid");
   }
 
-  const mySubscribtionList = await Subscription.findById(userId);
+  let mySubscribtionList = await Subscription.find({
+    subscriber: userId,
+  }).populate({
+    path: "channel",
+    select: "fullName email avatar ",
+  });
 
   if (!mySubscribtionList) {
     throw new ApiError(400, "Error fetching user subscribed list");

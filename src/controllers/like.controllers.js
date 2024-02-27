@@ -19,7 +19,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Video not found");
   }
 
-  const likedBy = { video: videoId, likedBy: req.user?._id };
+  const likedBy = { video: videoId, likedBy: req.user?._id.toString() };
 
   const isLiked = await Like.findOne(likedBy);
 
@@ -37,8 +37,9 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
   }
 
   // if already liked then dislike the video
+  console.log("Ljed: ", likedBy);
 
-  const dislike = await Like.deleteOne({ likedBy });
+  const dislike = await Like.deleteOne(likedBy);
 
   if (!dislike) {
     throw new ApiError(500, "Unable to dislike the video");
@@ -62,7 +63,7 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Comment not found");
   }
 
-  const likedBy = { comment: commentId, likedBy: req.user?._id };
+  const likedBy = { comment: commentId, likedBy: req.user?._id.toString() };
 
   // check if user has already liked the comment
 
@@ -94,4 +95,92 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Successfully dislike the comment"));
 });
 
-export { toggleCommentLike, toggleVideoLike };
+const noOfLikesInVideo = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!videoId) {
+    throw new ApiError(400, "Video id is missing");
+  }
+
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "Video id is invalid");
+  }
+
+  let videoLikes = await Like.findOne({
+    video: videoId,
+  });
+
+  console.log("idoid: ", videoLikes);
+
+  if (!videoLikes) {
+    videoLikes = {};
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, [videoLikes], "Video likes fetched successfully")
+    );
+});
+
+const noOfLikesInComment = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+
+  if (!commentId) {
+    throw new ApiError(400, "Comment id is missing");
+  }
+
+  if (!isValidObjectId(commentId)) {
+    throw new ApiError(400, "Comment id is invalid");
+  }
+
+  const commentLikes = await Like.findOne({
+    comment: commentId,
+  });
+
+  if (!commentLikes) {
+    throw new ApiError(400, "Error fetching likes in comment");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, [commentLikes], "Comment likes fetched successfully")
+    );
+});
+
+const myLikesVideo = asyncHandler(async (req, res) => {
+  const userId = req.user?._id;
+
+  if (!userId) {
+    throw new ApiError(400, "User id is missing");
+  }
+
+  if (!isValidObjectId(userId)) {
+    throw new ApiError(400, "User id is invalid");
+  }
+
+  console.log("user d: ", userId);
+
+  const myLikes = await Like.findOne({
+    likedBy: userId,
+  }).populate("video");
+
+  if (!myLikes) {
+    throw new ApiError(400, "Error fetching my liked video");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, [myLikes], "My liked videos fetched successfully")
+    );
+});
+
+export {
+  toggleCommentLike,
+  toggleVideoLike,
+  noOfLikesInVideo,
+  myLikesVideo,
+  noOfLikesInComment,
+};
