@@ -39,7 +39,7 @@ const getUserPlayList = asyncHandler(async (req, res) => {
     },
     {
       $lookup: {
-        from: "Video",
+        from: "videos",
         localField: "videos",
         foreignField: "_id",
         as: "videos",
@@ -81,7 +81,7 @@ const getPlayListById = asyncHandler(async (req, res) => {
     },
     {
       $lookup: {
-        from: "Video",
+        from: "videos",
         localField: "videos",
         foreignField: "_id",
         as: "videos",
