@@ -5,6 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { Video } from "../models/video.modal.js";
 import { Comment } from "../models/comment.model.js";
 import { Like } from "../models/likes.model.js";
+import { Tweet } from "./../models/tweet.model.js";
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
@@ -106,7 +107,7 @@ const noOfLikesInVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Video id is invalid");
   }
 
-  let videoLikes = await Like.findOne({
+  let videoLikes = await Like.find({
     video: videoId,
   });
 
@@ -134,7 +135,7 @@ const noOfLikesInComment = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Comment id is invalid");
   }
 
-  const commentLikes = await Like.findOne({
+  const commentLikes = await Like.find({
     comment: commentId,
   });
 
@@ -162,7 +163,7 @@ const myLikesVideo = asyncHandler(async (req, res) => {
 
   console.log("user d: ", userId);
 
-  const myLikes = await Like.findOne({
+  const myLikes = await Like.find({
     likedBy: userId,
   }).populate("video");
 
@@ -173,7 +174,83 @@ const myLikesVideo = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, [myLikes], "My liked videos fetched successfully")
+      new ApiResponse(200, myLikes, "My liked videos fetched successfully")
+    );
+});
+
+const toggleTweetLike = asyncHandler(async (req, res) => {
+  const { tweetId } = req.params;
+
+  if (!tweetId) {
+    throw new ApiError(400, "Tweet id is missing");
+  }
+
+  if (!isValidObjectId(tweetId)) {
+    throw new ApiError(400, "Tweet id is invalid");
+  }
+
+  const tweetExists = await Tweet.findById(tweetId);
+
+  if (!tweetExists) {
+    throw new ApiError(400, "Tweet not found");
+  }
+
+  const likeCriteria = { tweet: tweetId, likedBy: req.user?._id };
+
+  const isLiked = await Like.findOne(likeCriteria);
+
+  if (!isLiked) {
+    const like = await Like.create(likeCriteria);
+
+    if (!like) {
+      throw new ApiError(
+        500,
+        "Unable to like tweet at this moment, try again later"
+      );
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, like, "Successfully liked the tweet"));
+  }
+
+  const dislike = await Like.deleteOne(likeCriteria);
+
+  if (!dislike) {
+    throw new ApiError(
+      500,
+      "Unable to dislike tweet at this moment, try again later"
+    );
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, dislike, "Successfully disliked the tweet"));
+});
+
+const noOfLikesInTweet = asyncHandler(async (req, res) => {
+  const { tweetId } = req.params;
+
+  if (!tweetId) {
+    throw new ApiError(400, "Tweet id is missing");
+  }
+
+  if (!isValidObjectId(tweetId)) {
+    throw new ApiError(400, "Tweet id is invalid");
+  }
+
+  const tweetLikes = await Like.find({
+    tweet: tweetId,
+  });
+
+  if (!tweetLikes) {
+    throw new ApiError(400, "Error fetching likes in tweet");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, [tweetLikes], "Comment likes fetched successfully")
     );
 });
 
@@ -183,4 +260,6 @@ export {
   noOfLikesInVideo,
   myLikesVideo,
   noOfLikesInComment,
+  toggleTweetLike,
+  noOfLikesInTweet,
 };
