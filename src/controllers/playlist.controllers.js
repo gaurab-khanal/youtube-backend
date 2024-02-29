@@ -248,10 +248,47 @@ const deletePlaylist = asyncHandler(async (req, res) => {
     );
 });
 
+const updatePlaylist = asyncHandler(async (req, res) => {
+  const { playlistId } = req.params;
+  const { name, description } = req.body;
+
+  if (!playlistId) {
+    throw new ApiError(400, "Playlist id is missing");
+  }
+
+  const isOwner = await isPlaylistOwner(playlistId, req.user?._id);
+
+  if (!isOwner) {
+    throw new ApiError(401, "Unauthorized access");
+  }
+
+  if (!name || !description) {
+    throw new ApiError(300, "All fields are required");
+  }
+
+  const updatePlaylist = await Playlist.findByIdAndUpdate(playlistId, {
+    $set: {
+      name,
+      description,
+    },
+  });
+
+  if (!updatedPlaylist) {
+    throw new ApiError(500, "Unable to update the Playlist");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, updatedPlaylist, "Playlist Updated Successfully")
+    );
+});
+
 export {
   createPlayList,
   getUserPlayList,
   getPlayListById,
   addVideoToPlaylist,
   removeVideoFromPlaylist,
+  deletePlaylist,
 };
