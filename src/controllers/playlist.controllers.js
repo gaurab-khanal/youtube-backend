@@ -161,4 +161,65 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     );
 });
 
-export { createPlayList, getUserPlayList, getPlayListById, addVideoToPlaylist };
+const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
+  const { playlistId, videoId } = req.params;
+
+  if (!playlistId || !videoId) {
+    throw new ApiError(400, "PlaylistId or videoId is missing");
+  }
+
+  const isOwner = await isPlaylistOwner(playlistId, req.user?._id);
+
+  if (!isOwner) {
+    throw new ApiError(401, "Unauthorized access");
+  }
+
+  const video = await Video.findById(videoId);
+
+  if (!video) {
+    throw new ApiError(400, "Video not found");
+  }
+
+  // check if video is available in playlist or not
+
+  const playlist = await Playlist.findById(playlistId);
+
+  if (!playlist) {
+    throw new ApiError(404, "Playlist not found");
+  }
+
+  if (!playlist.videos.includes(videoId)) {
+    throw new ApiError(404, "No video found in playlist");
+  }
+
+  const removeVideo = await Playlist.updateOne(
+    {
+      _id: new mongoose.Types.ObjectId(playlistId),
+    },
+    {
+      $pull: { videos: videoId },
+    }
+  );
+
+  if (!removeVideo) {
+    throw new ApiError(400, "Cannot delete video at this moment");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        removeVideo,
+        "Video deleted successfully from the playlist"
+      )
+    );
+});
+
+export {
+  createPlayList,
+  getUserPlayList,
+  getPlayListById,
+  addVideoToPlaylist,
+  removeVideoFromPlaylist,
+};
