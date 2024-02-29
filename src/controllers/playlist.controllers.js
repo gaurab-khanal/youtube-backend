@@ -235,7 +235,9 @@ const deletePlaylist = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Unauthorized access to delete playlist");
   }
 
-  const deletePlaylist = await Playlist.deleteOne(playlistId);
+  const deletePlaylist = await Playlist.deleteOne({ _id: playlistId });
+
+  console.log(deletePlaylist);
 
   if (!deletePlaylist) {
     throw new ApiError(404, "Error deleting playlist");
@@ -273,14 +275,14 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     },
   });
 
-  if (!updatedPlaylist) {
+  if (!updatePlaylist) {
     throw new ApiError(500, "Unable to update the Playlist");
   }
 
   return res
     .status(200)
     .json(
-      new ApiResponse(200, updatedPlaylist, "Playlist Updated Successfully")
+      new ApiResponse(200, updatePlaylist, "Playlist Updated Successfully")
     );
 });
 
@@ -291,4 +293,5 @@ export {
   addVideoToPlaylist,
   removeVideoFromPlaylist,
   deletePlaylist,
+  updatePlaylist,
 };
