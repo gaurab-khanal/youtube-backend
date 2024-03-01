@@ -30,9 +30,11 @@ import LikeRoutes from "./routes/like.routes.js";
 import SubscriberRoutes from "./routes/subscription.routes.js";
 import Dashboard from "./routes/dashboard.routes.js";
 import Playlist from "./routes/playlist.routes.js";
+import Tweet from "./routes/tweet.routes.js";
 
 // routes declaration
 app.use("/api/v1/subscription", SubscriberRoutes);
+app.use("/api/v1/tweet", Tweet);
 app.use("/api/v1/playlist", Playlist);
 app.use("/api/v1/stat", Dashboard);
 app.use("/api/v1/healthcheck", healthcheckRouter);

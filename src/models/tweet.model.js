@@ -10,10 +10,6 @@ const tweetSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
     },
-    parentId: {
-      type: Schema.Types.ObjectId,
-      ref: "Tweet",
-    },
   },
   { timestamps: true }
 );
