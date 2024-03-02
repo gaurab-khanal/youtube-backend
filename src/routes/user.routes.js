@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   changeCurrentPassword,
+  deleteHistory,
   forgetPassword,
   getCurrentUser,
   getUserChannelProfile,
@@ -52,5 +53,6 @@ router
   .route("/update-coverImage")
   .patch(verifyJwt, upload.single("coverImage"), updateUserCover);
 router.route("/history").get(verifyJwt, getWatchHistory);
+router.route("/history/:videoId").delete(verifyJwt, deleteHistory);
 
 export default router;

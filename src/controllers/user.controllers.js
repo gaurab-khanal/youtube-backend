@@ -577,6 +577,41 @@ const resetPassword = asyncHandler(async (req, res) => {
     );
 });
 
+const deleteHistory = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  const userId = req.user?._id;
+
+  if (!videoId) {
+    throw new ApiError(404, "Video id is missing");
+  }
+
+  if (!userId) {
+    throw new ApiError(404, "User id is missing");
+  }
+
+  // check for user
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (!user.watchHistory.includes(videoId)) {
+    throw new ApiError(404, "Video isnt available in user watchhistory");
+  }
+
+  const newWatchHistory = user.watchHistory.filter((item) => item != videoId);
+
+  user.watchHistory = newWatchHistory;
+
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Video deleted from watch history"));
+});
+
 export {
   registerUser,
   loginUser,
@@ -591,4 +626,5 @@ export {
   getWatchHistory,
   forgetPassword,
   resetPassword,
+  deleteHistory,
 };
