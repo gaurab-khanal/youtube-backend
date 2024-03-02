@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   changeCurrentPassword,
+  forgetPassword,
   getCurrentUser,
   getUserChannelProfile,
   getWatchHistory,
@@ -8,6 +9,7 @@ import {
   logoutUser,
   refreshAccessToken,
   registerUser,
+  resetPassword,
   updateAccountDetails,
   updateUserAvatar,
   updateUserCover,
@@ -32,6 +34,8 @@ router.route("/register").post(
 );
 
 router.route("/login").post(loginUser);
+router.route("/forgetPassword").post(forgetPassword);
+router.route("/resetpassword/:forgetToken").post(resetPassword);
 
 router.route("/channel/:username").get(getUserChannelProfile);
 

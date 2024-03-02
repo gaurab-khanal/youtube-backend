@@ -5,6 +5,9 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteOnCloudinray, uploadOnCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
+import { sendMail } from "../utils/sendEmail.js";
+import fs from "fs";
+import crypto from "crypto";
 
 const registerUser = asyncHandler(async (req, res) => {
   // get user details from frontend
@@ -33,12 +36,19 @@ const registerUser = asyncHandler(async (req, res) => {
 
   console.log("User: ", userExist);
 
-  if (userExist) {
-    throw new ApiError(409, "Email or username already exists");
-  }
-
   const avatarLocalPath = req.files?.avatar[0]?.path;
   console.log(avatarLocalPath);
+
+  if (userExist) {
+    fs.unlink(avatarLocalPath, (err) => {
+      if (err) {
+        console.log("Error while deleting file: ", err);
+      } else {
+        console.log("File deleted successfully");
+      }
+    });
+    throw new ApiError(409, "Email or username already exists");
+  }
 
   let coverImageOnline = null;
 
@@ -475,6 +485,98 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     );
 });
 
+const forgetPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new ApiError(400, "You aren't registered yet!");
+  }
+
+  const forgetToken = user.getForgetPasswordToken();
+
+  await user.save({ validateBeforeSave: false });
+
+  // replae url with frontend url after frontend is ready;
+
+  const myUrl = `http://localhost:8000/api/v1/resetpassword/${forgetToken}`;
+
+  const message = `Copy paste this link in your browser and hit enter \n\n ${myUrl}`;
+
+  try {
+    const options = {
+      email: user.email,
+      subject: "Forget Password link",
+      message: message,
+    };
+
+    await sendMail(options);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Foget password email sent successfully"));
+  } catch (error) {
+    console.log(error);
+    user.forgetPasswordToken = undefined;
+    user.forgetPasswordExpiry = undefined;
+    await user.save({ validateBeforeSave: false });
+    throw new ApiError(400, error);
+  }
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  const { password, confirmPassword } = req.body;
+  const { forgetToken } = req.params;
+
+  if (!forgetToken) {
+    throw new ApiError(404, "Forget password token is missing");
+  }
+
+  if (!password || !confirmPassword) {
+    throw new ApiError(404, "Password or confirm password is missing");
+  }
+
+  if (password !== confirmPassword) {
+    throw new ApiError(400, "Password and confirm password doesnot match");
+  }
+
+  const encryptedToken = crypto
+    .createHash("sha256")
+    .update(forgetToken)
+    .digest("hex");
+
+  // make sure the received forgetToken is encryped and checked for its existence in db as in db
+  // it is stored by encrypting it.
+  // also dont forgetto check its expiry
+  const user = await User.findOne({
+    forgetPasswordToken: encryptedToken,
+    forgetPasswordTokenExpiry: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    throw new ApiError(401, "Token invalid or expired");
+  }
+
+  user.password = password;
+  user.forgetPasswordToken = undefined;
+  user.forgetPasswordTokenExpiry = undefined;
+
+  const updatedUser = await user.save({ validateBeforeSave: false });
+
+  updatedUser.password = undefined;
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        updatedUser,
+        "Password reset successfully, Proceed to login"
+      )
+    );
+});
+
 export {
   registerUser,
   loginUser,
@@ -487,4 +589,6 @@ export {
   updateUserCover,
   getUserChannelProfile,
   getWatchHistory,
+  forgetPassword,
+  resetPassword,
 };

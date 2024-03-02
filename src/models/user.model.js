@@ -2,6 +2,7 @@ import mongoose, { Schema } from "mongoose";
 import jwt from "jsonwebtoken"; // used for access and refresh token // JWT is a bearer token which is it sends the data to one who have access to the token
 import bcrypt from "bcrypt"; // decrypt and encrypt passwords
 import validator from "validator";
+import crypto from "crypto";
 
 const userSchema = new Schema(
   {
@@ -61,6 +62,12 @@ const userSchema = new Schema(
       type: String,
       select: false,
     },
+    forgetPasswordToken: {
+      type: String,
+    },
+    forgetPasswordTokenExpiry: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );
@@ -100,6 +107,22 @@ userSchema.methods.generateRefreshToken = function () {
       expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
     }
   );
+};
+
+userSchema.methods.getForgetPasswordToken = function () {
+  // generate a long and random string
+  const forgetToken = crypto.randomBytes(20).toString("hex");
+
+  //hash the token for security
+  this.forgetPasswordToken = crypto
+    .createHash("sha256")
+    .update(forgetToken)
+    .digest("hex");
+
+  this.forgetPasswordTokenExpiry =
+    Date.now() + process.env.FORGET_PASSWORD_EXPIRY_TIME * 60 * 1000;
+
+  return forgetToken;
 };
 
 export const User = mongoose.model("User", userSchema);
