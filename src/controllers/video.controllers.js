@@ -8,6 +8,7 @@ import { Comment } from "../models/comment.model.js";
 import { Like } from "../models/likes.model.js";
 import { Playlist } from "../models/playlist.model.js";
 import { Types, isValidObjectId } from "mongoose";
+import { getUserId } from "../utils/getUserId.js";
 
 const publishVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
@@ -116,6 +117,29 @@ const getVideoById = asyncHandler(async (req, res) => {
 
   if (!video) {
     throw new ApiError(404, "Video not found");
+  }
+
+  const userId = await getUserId(req);
+
+  let user;
+
+  if (userId) {
+    // find user with id and update watchhistory
+    user = await User.findByIdAndUpdate(
+      userId,
+      {
+        $addToSet: {
+          watchHistory: videoId,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+
+    if (!user) {
+      throw new ApiError(400, "Unable to set watch history");
+    }
   }
 
   const updatedVideoViews = await Video.findByIdAndUpdate(
