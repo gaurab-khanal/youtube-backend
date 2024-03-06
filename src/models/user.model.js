@@ -25,7 +25,6 @@ const userSchema = new Schema(
     fullName: {
       type: String,
       required: [true, "Please provide your fullname"],
-      lowercase: true,
       trim: true,
       index: true,
     },

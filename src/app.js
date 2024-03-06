@@ -32,6 +32,13 @@ import Dashboard from "./routes/dashboard.routes.js";
 import Playlist from "./routes/playlist.routes.js";
 import Tweet from "./routes/tweet.routes.js";
 
+// docs setup
+import swaggerUi from "swagger-ui-express";
+import YAML from "yamljs";
+
+const swaggerDocument = YAML.load("./swagger.yaml");
+app.use("/apiDocs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 // routes declaration
 app.use("/api/v1/subscription", SubscriberRoutes);
 app.use("/api/v1/tweet", Tweet);

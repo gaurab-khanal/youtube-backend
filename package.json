@@ -25,6 +25,8 @@
     "mongoose-aggregate-paginate-v2": "^1.0.7",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.11",
-    "validator": "^13.11.0"
+    "swagger-ui-express": "^5.0.0",
+    "validator": "^13.11.0",
+    "yamljs": "^0.3.0"
   }
 }

@@ -140,7 +140,9 @@ const loginUser = asyncHandler(async (req, res) => {
     user._id
   );
 
-  const loggedInUser = await User.findById(user._id);
+  const loggedInUser = await User.findById(user._id).select("+refreshToken");
+
+  console.log(loggedInUser);
 
   const options = {
     httpOnly: true,
@@ -151,7 +153,7 @@ const loginUser = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
-    .json({ loggedInUser });
+    .json(new ApiResponse(200, loggedInUser, "User logged in successfully"));
 });
 
 const logoutUser = asyncHandler(async (req, res) => {

@@ -1,0 +1,400 @@
+openapi: "3.0.0"
+info:
+  title: Video app API
+  description: Perfect choice for your daily videos
+  version: 1.0.0
+  contact:
+    email: khanalgaurab98@gmail.com
+
+servers:
+  - url: "{protocol}://{url}/api/{version}"
+    description: for local host
+    variables:
+      version:
+        enum:
+          - v1
+        default: v1
+      url:
+        enum:
+          - localhost:8000
+          # - ecomm-backend-vogg.onrender.com replace with deployed url
+        default: localhost:8000
+      protocol:
+        enum:
+          - http
+          - https
+        default: http
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+paths:
+  /healthcheck:
+    get:
+      summary: Health Check
+      tags:
+        - Home
+      description: Performs a basic health check on the API
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+  
+  /users/register:
+    post:
+      summary: Register a new user
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - fullName
+                - email
+                - password
+                - username
+                - avatar
+              properties:
+                fullName:
+                  type: string
+                  example: John Doe
+                  required: true
+                email:
+                  type: string
+                  example: john.doe@example.com
+                username:
+                  type: string
+                  example: johndoe
+                password:
+                  type: string
+                  example: password123
+                avatar:
+                  type: string
+                  format: binary
+                  description: User's profile picture (required)
+                coverImage:
+                  type: string
+                  format: binary
+                  description: User's cover image (optional)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                   
+
+        
+  /users/login:
+      post:
+        summary: Login user
+        tags:
+          - User
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  email:
+                    type: string
+                  password:
+                    type: string
+        responses:
+          '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  type: object
+
+  /users/logout:
+     post:
+        summary: Logout user
+        tags:
+          - User
+        responses:
+          '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  type: object
+  
+  /users/change-password:
+    post:
+      summary: Changes user password
+      tags:
+        - User
+      requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - oldPassword
+                  - newPassword
+                properties:
+                  oldPassword:
+                    type: string
+                  newPassword:
+                    type: string
+      responses:
+          '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  type: object
+
+
+  /users/current-user:
+    get:
+      summary: Get current user details
+      tags:
+        - User
+      responses:
+          '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  type: object
+
+  /users/update-user:
+    patch:
+      summary: Update user details  
+      tags:
+        - User
+      requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - fullName
+                  - email
+                properties:
+                  fullName:
+                    type: string
+                  email:
+                    type: string
+      responses:
+          '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  type: object
+
+  /users/update-avatar:
+    patch:
+      summary: Update user avatar
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - avatar
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+                  description: User's profile picture (required)
+
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+  
+  /users/update-coverImage:
+    patch:
+      summary: Update user Cover Image
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - coverImage
+              properties:
+                coverImage:
+                  type: string
+                  format: binary
+                  description: User's profile picture (required)
+
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+
+  /users/forgetPassword:
+    post:
+      summary: Forget password
+      tags:
+        - User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  description: Provide email address to send forget password token
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+  
+  /users/resetpassword/{forgetToken}:
+    post:
+      summary: Reset password using forget password token
+      tags:
+        - User
+      parameters:
+        - name: forgetToken
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: 
+              type: object
+              required:
+                - password
+                - confirmPassword
+              properties:
+                password:
+                  type: string
+                confirmPassword:
+                  type: string
+                  description: Confirm the above password
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+  
+  /users/channel/{username}:
+    get:
+      summary: Get specific channel profile based on username
+      tags:
+        - User
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+  /users/history:
+    get:
+      summary: Get user watched history details
+      tags:
+        - User
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+  
+  /users/history/{videoId}:
+    delete:
+      summary: Get user watched history details
+      tags:
+        - User
+      parameters:
+        - name: videoId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+
+
+          
+            
