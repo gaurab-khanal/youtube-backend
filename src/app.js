@@ -7,9 +7,11 @@ const app = express();
 //  can do this as well for allowing multiple origins
 // const allowedOrigins = [process.env.CORS_ORIGIN1, process.env.CORS_ORIGIN2]; // Add more origins as needed
 
+const allowedOrigins = process.env.CORS_ORIGIN.split(","); // split the string by comma and store in array
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN, // only the url of cors origin is allowed and pass allowedOrigins
+    origin: allowedOrigins, // only the url of cors origin is allowed and pass allowedOrigins
     credentials: true,
   })
 );
