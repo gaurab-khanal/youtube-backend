@@ -20,6 +20,8 @@ app.use(express.static("public")); // allows to store static data received from 
 
 app.use(cookieParser()); // allows to access cookies of browser as well set the cookies.
 
+
+
 // routes import
 
 import userRoutes from "./routes/user.routes.js";
@@ -35,6 +37,7 @@ import Tweet from "./routes/tweet.routes.js";
 // docs setup
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+import { ApiError } from "./utils/ApiError.js";
 
 const swaggerDocument = YAML.load("./swagger.yaml");
 app.use("/apiDocs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
@@ -49,5 +52,24 @@ app.use("/api/v1/comment", commentRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/video", videoRoutes);
 app.use("/api/v1/like", LikeRoutes);
+
+// send error in json form
+app.use((err, req, res, next) => {
+  if (err instanceof ApiError) {
+    res.status(err.statusCode).json({
+      success: err.success,
+      message: err.message,
+      errors: err.errors,
+      data: err.data
+    });
+  } else {
+    res.status(500).json({
+      success: false,
+      message: 'Something went wrong',
+      errors: [err.message],
+      data: null
+    });
+  }
+});
 
 export { app };
