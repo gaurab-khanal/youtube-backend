@@ -8,9 +8,11 @@ const app = express();
 //  can do this as well for allowing multiple origins
 // const allowedOrigins = [process.env.CORS_ORIGIN1, process.env.CORS_ORIGIN2]; // Add more origins as needed
 
+const allowedOrigins = process.env.CORS_ORIGIN.split(","); // split the string by comma and store in array
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN, // only the url of cors origin is allowed and pass allowedOrigins
+    origin: allowedOrigins, // only the url of cors origin is allowed and pass allowedOrigins
     credentials: true,
   })
 );
@@ -38,7 +40,7 @@ import Tweet from "./routes/tweet.routes.js";
 // docs setup
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
-import morgan from "morgan";
+import { ApiError } from "./utils/ApiError.js";
 
 const swaggerDocument = YAML.load("./swagger.yaml");
 app.use("/apiDocs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
@@ -53,5 +55,24 @@ app.use("/api/v1/comment", commentRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/video", videoRoutes);
 app.use("/api/v1/like", LikeRoutes);
+
+// send error in json form
+app.use((err, req, res, next) => {
+  if (err instanceof ApiError) {
+    res.status(err.statusCode).json({
+      success: err.success,
+      message: err.message,
+      errors: err.errors,
+      data: err.data,
+    });
+  } else {
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      errors: [err.message],
+      data: null,
+    });
+  }
+});
 
 export { app };

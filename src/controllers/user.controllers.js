@@ -35,7 +35,7 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   console.log("User: ", userExist);
-
+console.log("djdff: djh::   ", req.files?.avatar)
   const avatarLocalPath = req.files?.avatar[0]?.path;
   console.log(avatarLocalPath);
 
@@ -147,6 +147,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const options = {
     httpOnly: true,
     secure: true,
+    sameSite: "lax",
   };
 
   return res
