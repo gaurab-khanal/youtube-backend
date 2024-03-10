@@ -1,6 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import morgan from "morgan";
 
 const app = express();
 
@@ -20,6 +21,8 @@ app.use(express.static("public")); // allows to store static data received from 
 
 app.use(cookieParser()); // allows to access cookies of browser as well set the cookies.
 
+app.use(morgan("tiny"));
+
 // routes import
 
 import userRoutes from "./routes/user.routes.js";
@@ -35,6 +38,7 @@ import Tweet from "./routes/tweet.routes.js";
 // docs setup
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+import morgan from "morgan";
 
 const swaggerDocument = YAML.load("./swagger.yaml");
 app.use("/apiDocs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
